@@ -1,30 +1,210 @@
 {
-  "botName": "OpenClaw Bot",
+  "botName": "OpenClaw Dashboard",
   "botEmoji": "🦞",
-  "workingOn": "Ready",
-  "workingOnMeta": "Run refresh.sh to populate",
-  "sessionsMeta": "0 tracked",
-  "cronsMeta": "0 scheduled",
-  "skillCount": 0,
-  "skillsMeta": "Run refresh.sh",
-  "nextScheduled": "—",
-  "nextScheduledMeta": "",
-  "inProgress": [],
-  "queue": [],
+  "lastRefresh": "2025-01-15 14:30:00 GMT+0",
+  "lastRefreshMs": 1736952600000,
+  "gateway": {
+    "status": "online",
+    "pid": 12345,
+    "uptime": "2-03:15:42",
+    "memory": "128 MB",
+    "rss": 131072
+  },
+  "compactionMode": "auto",
+  "totalCostToday": 3.47,
+  "totalCostAllTime": 142.85,
+  "projectedMonthly": 104.10,
+  "costBreakdown": [
+    { "model": "Claude Sonnet", "cost": 68.50 },
+    { "model": "Claude Haiku", "cost": 32.10 },
+    { "model": "GPT-4o", "cost": 24.75 },
+    { "model": "Gemini Flash", "cost": 17.50 }
+  ],
+  "costBreakdownToday": [
+    { "model": "Claude Sonnet", "cost": 2.10 },
+    { "model": "Claude Haiku", "cost": 0.85 },
+    { "model": "GPT-4o", "cost": 0.52 }
+  ],
+  "sessions": [
+    {
+      "name": "Main Agent",
+      "key": "agent:main:telegram:dm:example",
+      "agent": "main",
+      "model": "claude-sonnet-4-20250514",
+      "contextPct": 42,
+      "lastActivity": "14:28:15",
+      "updatedAt": 1736952495000,
+      "totalTokens": 85420,
+      "type": "telegram"
+    },
+    {
+      "name": "Work Agent — Dev Channel",
+      "key": "agent:work:telegram:group:example-dev",
+      "agent": "work",
+      "model": "claude-sonnet-4-20250514",
+      "contextPct": 67,
+      "lastActivity": "14:15:30",
+      "updatedAt": 1736951730000,
+      "totalTokens": 124800,
+      "type": "group"
+    },
+    {
+      "name": "Cron: Daily Summary",
+      "key": "agent:main:cron:daily-summary",
+      "agent": "main",
+      "model": "claude-haiku-4-20250506",
+      "contextPct": 15,
+      "lastActivity": "08:00:05",
+      "updatedAt": 1736928005000,
+      "totalTokens": 12340,
+      "type": "cron"
+    },
+    {
+      "name": "Sub-Agent: Research Task",
+      "key": "agent:main:subagent:abc123",
+      "agent": "main",
+      "model": "claude-sonnet-4-20250514",
+      "contextPct": 88,
+      "lastActivity": "13:45:00",
+      "updatedAt": 1736949900000,
+      "totalTokens": 198500,
+      "type": "subagent"
+    }
+  ],
+  "sessionCount": 12,
+  "crons": [
+    {
+      "name": "daily-summary",
+      "schedule": "0 8 * * *",
+      "enabled": true,
+      "lastRun": "2025-01-15 08:00",
+      "lastStatus": "ok",
+      "lastDurationMs": 4520,
+      "nextRun": "2025-01-16 08:00",
+      "model": "claude-haiku-4-20250506"
+    },
+    {
+      "name": "health-check",
+      "schedule": "Every 30m",
+      "enabled": true,
+      "lastRun": "2025-01-15 14:00",
+      "lastStatus": "ok",
+      "lastDurationMs": 1230,
+      "nextRun": "2025-01-15 14:30",
+      "model": ""
+    },
+    {
+      "name": "weekly-report",
+      "schedule": "0 9 * * 1",
+      "enabled": true,
+      "lastRun": "2025-01-13 09:00",
+      "lastStatus": "ok",
+      "lastDurationMs": 12400,
+      "nextRun": "2025-01-20 09:00",
+      "model": "claude-sonnet-4-20250514"
+    }
+  ],
+  "subagentRuns": [
+    {
+      "task": "Research: API rate limits comparison",
+      "model": "Claude Sonnet",
+      "cost": 0.1250,
+      "durationSec": 145,
+      "status": "completed",
+      "timestamp": "2025-01-15 13:45",
+      "date": "2025-01-15"
+    },
+    {
+      "task": "Code review: auth module refactor",
+      "model": "Claude Sonnet",
+      "cost": 0.0840,
+      "durationSec": 92,
+      "status": "completed",
+      "timestamp": "2025-01-15 11:20",
+      "date": "2025-01-15"
+    },
+    {
+      "task": "Generate test fixtures",
+      "model": "Claude Haiku",
+      "cost": 0.0120,
+      "durationSec": 35,
+      "status": "completed",
+      "timestamp": "2025-01-14 16:30",
+      "date": "2025-01-14"
+    }
+  ],
+  "subagentRunsToday": [
+    {
+      "task": "Research: API rate limits comparison",
+      "model": "Claude Sonnet",
+      "cost": 0.1250,
+      "durationSec": 145,
+      "status": "completed",
+      "timestamp": "2025-01-15 13:45",
+      "date": "2025-01-15"
+    },
+    {
+      "task": "Code review: auth module refactor",
+      "model": "Claude Sonnet",
+      "cost": 0.0840,
+      "durationSec": 92,
+      "status": "completed",
+      "timestamp": "2025-01-15 11:20",
+      "date": "2025-01-15"
+    }
+  ],
+  "subagentCostAllTime": 8.42,
+  "subagentCostToday": 0.21,
+  "tokenUsage": [
+    { "model": "Claude Sonnet", "calls": 842, "input": "12.5M", "output": "2.1M", "cacheRead": "8.3M", "totalTokens": "22.9M", "cost": 68.50 },
+    { "model": "Claude Haiku", "calls": 1205, "input": "8.2M", "output": "1.4M", "cacheRead": "5.1M", "totalTokens": "14.7M", "cost": 32.10 },
+    { "model": "GPT-4o", "calls": 156, "input": "3.8M", "output": "0.6M", "cacheRead": "0", "totalTokens": "4.4M", "cost": 24.75 },
+    { "model": "Gemini Flash", "calls": 320, "input": "5.2M", "output": "0.8M", "cacheRead": "3.2M", "totalTokens": "9.2M", "cost": 17.50 }
+  ],
+  "tokenUsageToday": [
+    { "model": "Claude Sonnet", "calls": 28, "input": "420K", "output": "68K", "cacheRead": "310K", "totalTokens": "798K", "cost": 2.10 },
+    { "model": "Claude Haiku", "calls": 45, "input": "280K", "output": "42K", "cacheRead": "180K", "totalTokens": "502K", "cost": 0.85 },
+    { "model": "GPT-4o", "calls": 8, "input": "95K", "output": "15K", "cacheRead": "0", "totalTokens": "110K", "cost": 0.52 }
+  ],
+  "subagentUsage": [
+    { "model": "Claude Sonnet", "calls": 52, "input": "1.2M", "output": "180K", "cacheRead": "850K", "totalTokens": "2.2M", "cost": 6.80 },
+    { "model": "Claude Haiku", "calls": 18, "input": "320K", "output": "45K", "cacheRead": "210K", "totalTokens": "575K", "cost": 1.62 }
+  ],
+  "subagentUsageToday": [
+    { "model": "Claude Sonnet", "calls": 4, "input": "85K", "output": "12K", "cacheRead": "62K", "totalTokens": "159K", "cost": 0.21 }
+  ],
+  "availableModels": [
+    { "provider": "Anthropic", "name": "Claude Sonnet 4", "id": "anthropic/claude-sonnet-4-20250514", "status": "active" },
+    { "provider": "Anthropic", "name": "Claude Haiku 4", "id": "anthropic/claude-haiku-4-20250506", "status": "available" },
+    { "provider": "Openai", "name": "GPT-4o", "id": "openai/gpt-4o", "status": "available" },
+    { "provider": "Google", "name": "Gemini 2.5 Flash", "id": "google/gemini-2.5-flash-preview-05-20", "status": "available" }
+  ],
+  "skills": [
+    { "name": "web-search", "active": true, "type": "builtin" },
+    { "name": "web-fetch", "active": true, "type": "builtin" },
+    { "name": "github", "active": true, "type": "builtin" },
+    { "name": "calendar", "active": false, "type": "builtin" },
+    { "name": "email", "active": false, "type": "builtin" },
+    { "name": "image-gen", "active": true, "type": "builtin" }
+  ],
+  "gitLog": [
+    { "hash": "a1b2c3d", "message": "feat: add sub-agent tracking panel", "ago": "2 hours ago" },
+    { "hash": "e4f5g6h", "message": "fix: context percentage calculation", "ago": "5 hours ago" },
+    { "hash": "i7j8k9l", "message": "refactor: token usage aggregation", "ago": "1 day ago" },
+    { "hash": "m0n1o2p", "message": "feat: add cron job monitoring", "ago": "2 days ago" },
+    { "hash": "q3r4s5t", "message": "initial commit", "ago": "5 days ago" }
+  ],
+  "alerts": [
+    { "type": "warning", "icon": "⚠️", "message": "High context: Work Agent — Dev Channel (67%)", "severity": "medium" }
+  ],
+  "inProgress": [
+    { "title": "Dashboard v2 migration", "tag": "feature", "tagClass": "tag-feature", "meta": "In progress" }
+  ],
+  "queue": [
+    { "title": "Add dark/light theme toggle", "tag": "feature", "tagClass": "tag-feature", "meta": "Planned" }
+  ],
   "waiting": [],
-  "doneToday": [],
-  "sessions": [],
-  "crons": [],
-  "models": [],
-  "availableModels": [],
-  "skills": [],
-  "tokenUsage": [],
-  "tokenUsageToday": [],
-  "subagentUsage": [],
-  "subagentUsageToday": [],
-  "lastRefresh": "Never — run ./refresh.sh",
-  "totalCostAllTime": 0,
-  "totalCostToday": 0,
-  "subagentCostAllTime": 0,
-  "subagentCostToday": 0
+  "doneToday": [
+    { "title": "Fix token count display", "tag": "bug", "tagClass": "tag-bug", "meta": "Completed" }
+  ]
 }
