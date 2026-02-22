@@ -1,0 +1,11 @@
+tests/
+docs/
+screenshots/
+examples/
+*.md
+.git/
+.gitignore
+.dockerignore
+data.json
+install.sh
+uninstall.sh
