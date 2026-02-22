@@ -37,7 +37,7 @@ class ServerTestBase(unittest.TestCase):
         if not os.path.exists(DATA_FILE):
             # Write minimal valid data so server can serve it
             with open(DATA_FILE, "w") as f:
-                json.dump({"gateway": {"status": "unknown"}, "totalCostToday": 0, "crons": [], "sessions": [], "tokenUsage": [], "subagentRuns": [], "dailyChart": [], "models": [], "skills": [], "gitLog": [], "agentConfig": {}}, f)
+                json.dump({"gateway": {"status": "unknown"}, "totalTokensToday": 0, "totalTokensAllTime": 0, "avgDailyTokens": 0, "crons": [], "sessions": [], "tokenUsage": [], "subagentRuns": [], "dailyChart": [], "models": [], "skills": [], "gitLog": [], "agentConfig": {}}, f)
         env = os.environ.copy()
         env["DASHBOARD_PORT"] = str(cls.port)
         env["DASHBOARD_BIND"] = "127.0.0.1"
@@ -110,7 +110,7 @@ class TestRefreshEndpoint(ServerTestBase):
         self.assertEqual(resp.status, 200)
         data = json.loads(body)
         # Must have at least these keys (from data.json)
-        for key in ("gateway", "totalCostToday", "crons", "sessions"):
+        for key in ("gateway", "totalTokensToday", "crons", "sessions"):
             self.assertIn(key, data, f"Missing key: {key}")
 
     def test_ac3_cors_not_wildcard(self):

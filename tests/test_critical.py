@@ -224,14 +224,14 @@ def test_tc9_refresh_returns_valid_json(server_proc):
     assert headers.get("Content-Type", "").startswith("application/json")
 
 
-def test_tc10_data_endpoint_has_numeric_total_cost_today(server_proc):
+def test_tc10_data_endpoint_has_int_total_tokens_today(server_proc):
     # /api/data (if available), otherwise /api/refresh as equivalent data endpoint.
     status, _, body = _request(server_proc["port"], "GET", "/api/data")
     if status != 200:
         status, _, body = _request(server_proc["port"], "GET", "/api/refresh")
     assert status == 200
     data = json.loads(body.decode("utf-8", errors="replace"))
-    assert isinstance(data.get("totalCostToday"), (int, float)), "totalCostToday must be numeric"
+    assert isinstance(data.get("totalTokensToday"), int), "totalTokensToday must be int"
 
 
 def test_tc11_head_root_returns_200(server_proc):
@@ -274,18 +274,11 @@ def test_tc12_concurrent_load_no_500(server_proc):
 
 
 @pytest.mark.skipif(not os.path.exists(DATA_JSON), reason="data.json not found yet")
-def test_tc13_projected_monthly_vs_today_with_outlier_tolerance():
+def test_tc13_avg_daily_tokens_is_nonneg_int():
     data = json.loads(_read(DATA_JSON))
-    today = float(data.get("totalCostToday", 0) or 0)
-    projected = float(data.get("projectedMonthly", 0) or 0)
-    # strict expected relation
-    if projected >= today:
-        assert True
-        return
-    # outlier tolerance (up to 10x); projected should still not be absurdly low
-    assert projected >= today / 10.0, (
-        f"projectedMonthly ({projected}) is too low vs totalCostToday ({today})"
-    )
+    avg = data.get("avgDailyTokens", 0)
+    assert isinstance(avg, int), f"avgDailyTokens must be int, got {type(avg)}"
+    assert avg >= 0, f"avgDailyTokens must be >= 0, got {avg}"
 
 
 @pytest.mark.skipif(not os.path.exists(DATA_JSON), reason="data.json not found yet")

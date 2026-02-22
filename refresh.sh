@@ -57,8 +57,8 @@ else:
 
 # ── Alert thresholds (configurable via config.json) ──
 alert_cfg = dc.get('alerts', {})
-COST_THRESHOLD_HIGH = alert_cfg.get('dailyCostHigh', 50)
-COST_THRESHOLD_WARN = alert_cfg.get('dailyCostWarn', 20)
+TOKEN_THRESHOLD_HIGH = alert_cfg.get('dailyTokenHigh', 5_000_000)
+TOKEN_THRESHOLD_WARN = alert_cfg.get('dailyTokenWarn', 2_000_000)
 CONTEXT_THRESHOLD = alert_cfg.get('contextPct', 80)
 MEMORY_THRESHOLD_KB = alert_cfg.get('memoryMb', 640) * 1024
 
@@ -449,7 +449,7 @@ def model_name(model):
     else: return model
 
 def new_bucket():
-    return {'calls':0,'input':0,'output':0,'cacheRead':0,'totalTokens':0,'cost':0.0}
+    return {'calls':0,'input':0,'output':0,'cacheRead':0,'totalTokens':0}
 
 models_all = defaultdict(new_bucket)
 models_today = defaultdict(new_bucket)
@@ -460,11 +460,10 @@ subagent_today = defaultdict(new_bucket)
 subagent_7d = defaultdict(new_bucket)
 subagent_30d = defaultdict(new_bucket)
 
-# Daily cost/token tracking for charts
-daily_costs = defaultdict(lambda: defaultdict(float))  # date -> model -> cost
+# Daily token tracking for charts
 daily_tokens = defaultdict(lambda: defaultdict(int))    # date -> model -> tokens
 daily_calls = defaultdict(lambda: defaultdict(int))     # date -> model -> calls
-daily_subagent_costs = defaultdict(float)               # date -> cost
+daily_subagent_tokens = defaultdict(int)                # date -> tokens
 daily_subagent_count = defaultdict(int)                 # date -> run count
 
 date_7d = (now - timedelta(days=7)).strftime('%Y-%m-%d')
@@ -491,7 +490,7 @@ for f in glob.glob(os.path.join(base, '*/sessions/*.jsonl')) + glob.glob(os.path
     session_key = sid_to_key.get(sid)
     is_subagent = 'subagent:' in (session_key or '') or sid not in known_sids
 
-    session_cost = 0
+    session_tokens = 0
     session_model = ''
     session_first_ts = None
     session_last_ts = None
@@ -510,7 +509,6 @@ for f in glob.glob(os.path.join(base, '*/sessions/*.jsonl')) + glob.glob(os.path
                     if 'delivery-mirror' in model: continue
 
                     name = model_name(model)
-                    cost_total = usage.get('cost',{}).get('total',0) if isinstance(usage.get('cost'),dict) else 0
                     inp = usage.get('input',0)
                     out = usage.get('output',0)
                     cr = usage.get('cacheRead',0)
@@ -521,7 +519,6 @@ for f in glob.glob(os.path.join(base, '*/sessions/*.jsonl')) + glob.glob(os.path
                     models_all[name]['output'] += out
                     models_all[name]['cacheRead'] += cr
                     models_all[name]['totalTokens'] += tt
-                    models_all[name]['cost'] += cost_total
 
                     if is_subagent:
                         subagent_all[name]['calls'] += 1
@@ -529,8 +526,7 @@ for f in glob.glob(os.path.join(base, '*/sessions/*.jsonl')) + glob.glob(os.path
                         subagent_all[name]['output'] += out
                         subagent_all[name]['cacheRead'] += cr
                         subagent_all[name]['totalTokens'] += tt
-                        subagent_all[name]['cost'] += cost_total
-                        session_cost += cost_total
+                        session_tokens += tt
                         session_model = name
 
                     ts = obj.get('timestamp','')
@@ -545,45 +541,43 @@ for f in glob.glob(os.path.join(base, '*/sessions/*.jsonl')) + glob.glob(os.path
 
                     # Daily tracking for charts
                     if msg_date:
-                        daily_costs[msg_date][name] += cost_total
                         daily_tokens[msg_date][name] += tt
                         daily_calls[msg_date][name] += 1
                         if is_subagent:
-                            daily_subagent_costs[msg_date] += cost_total
+                            daily_subagent_tokens[msg_date] += tt
 
-                    def add_bucket(bucket, n, i, o, c2, t, ct):
+                    def add_bucket(bucket, n, i, o, c2, t):
                         bucket[n]['calls'] += 1
                         bucket[n]['input'] += i
                         bucket[n]['output'] += o
                         bucket[n]['cacheRead'] += c2
                         bucket[n]['totalTokens'] += t
-                        bucket[n]['cost'] += ct
 
                     if msg_date == today_str:
-                        add_bucket(models_today, name, inp, out, cr, tt, cost_total)
+                        add_bucket(models_today, name, inp, out, cr, tt)
                         if is_subagent:
-                            add_bucket(subagent_today, name, inp, out, cr, tt, cost_total)
+                            add_bucket(subagent_today, name, inp, out, cr, tt)
 
                     if msg_date >= date_7d:
-                        add_bucket(models_7d, name, inp, out, cr, tt, cost_total)
+                        add_bucket(models_7d, name, inp, out, cr, tt)
                         if is_subagent:
-                            add_bucket(subagent_7d, name, inp, out, cr, tt, cost_total)
+                            add_bucket(subagent_7d, name, inp, out, cr, tt)
 
                     if msg_date >= date_30d:
-                        add_bucket(models_30d, name, inp, out, cr, tt, cost_total)
+                        add_bucket(models_30d, name, inp, out, cr, tt)
                         if is_subagent:
-                            add_bucket(subagent_30d, name, inp, out, cr, tt, cost_total)
+                            add_bucket(subagent_30d, name, inp, out, cr, tt)
                 except Exception as _e:
                     import sys; print(f"[dashboard warn] {_e}", file=sys.stderr)
     except Exception as _e:
         import sys; print(f"[dashboard warn] {_e}", file=sys.stderr)
 
-    if is_subagent and session_cost > 0 and session_last_ts:
+    if is_subagent and session_tokens > 0 and session_last_ts:
         duration_s = (session_last_ts - session_first_ts).total_seconds() if session_first_ts and session_last_ts else 0
         subagent_runs.append({
             'task': session_task[:60],
             'model': session_model,
-            'cost': round(session_cost, 4),
+            'tokens': session_tokens,
             'durationSec': int(duration_s),
             'status': 'completed',
             'timestamp': session_last_ts.strftime('%Y-%m-%d %H:%M'),
@@ -602,33 +596,31 @@ for r in subagent_runs:
 
 # ── Build daily chart data (last 30 days) ──
 chart_dates = [(now - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(29, -1, -1)]
-# Sort by total cost descending, keep top 6 + "Other"
-model_totals_30d = defaultdict(float)
+# Sort by total tokens descending, keep top 6 + "Other"
+model_token_totals_30d = defaultdict(int)
 for d in chart_dates:
-    for m, c in daily_costs.get(d, {}).items():
-        model_totals_30d[m] += c
-top_chart_models = sorted(model_totals_30d.keys(), key=lambda m: -model_totals_30d[m])[:6]
+    for m, t in daily_tokens.get(d, {}).items():
+        model_token_totals_30d[m] += t
+top_chart_models = sorted(model_token_totals_30d.keys(), key=lambda m: -model_token_totals_30d[m])[:6]
 
 daily_chart = []
 for d in chart_dates:
-    day_models = daily_costs.get(d, {})
     day_tokens_map = daily_tokens.get(d, {})
     day_calls_map = daily_calls.get(d, {})
     entry = {
         'date': d,
         'label': d[5:],  # MM-DD
-        'total': round(sum(day_models.values()), 2),
         'tokens': sum(day_tokens_map.values()),
         'calls': sum(day_calls_map.values()),
-        'subagentCost': round(daily_subagent_costs.get(d, 0), 2),
+        'subagentTokens': daily_subagent_tokens.get(d, 0),
         'subagentRuns': daily_subagent_count.get(d, 0),
-        'models': {}
+        'modelTokens': {}
     }
     for m in top_chart_models:
-        entry['models'][m] = round(day_models.get(m, 0), 4)
-    other = sum(c for m, c in day_models.items() if m not in top_chart_models)
+        entry['modelTokens'][m] = day_tokens_map.get(m, 0)
+    other = sum(t for m, t in day_tokens_map.items() if m not in top_chart_models)
     if other > 0:
-        entry['models']['Other'] = round(other, 4)
+        entry['modelTokens']['Other'] = other
     daily_chart.append(entry)
 
 
@@ -639,9 +631,9 @@ def fmt(n):
 
 def to_list(d):
     return [{'model':k,'calls':v['calls'],'input':fmt(v['input']),'output':fmt(v['output']),
-             'cacheRead':fmt(v['cacheRead']),'totalTokens':fmt(v['totalTokens']),'cost':round(v['cost'],2),
+             'cacheRead':fmt(v['cacheRead']),'totalTokens':fmt(v['totalTokens']),
              'inputRaw':v['input'],'outputRaw':v['output'],'cacheReadRaw':v['cacheRead'],'totalTokensRaw':v['totalTokens']}
-            for k,v in sorted(d.items(), key=lambda x:-x[1]['cost'])]
+            for k,v in sorted(d.items(), key=lambda x:-x[1]['totalTokens'])]
 
 # ── Git log ──
 git_log = []
@@ -657,13 +649,13 @@ except Exception as _e:
 
 # ── Alerts ──
 alerts = []
-total_cost_today = sum(v['cost'] for v in models_today.values())
-total_cost_all = sum(v['cost'] for v in models_all.values())
+total_tokens_today = sum(v['totalTokens'] for v in models_today.values())
+total_tokens_all = sum(v['totalTokens'] for v in models_all.values())
 
-if total_cost_today > COST_THRESHOLD_HIGH:
-    alerts.append({'type': 'warning', 'icon': '💰', 'message': f'High daily cost: ${total_cost_today:.2f}', 'severity': 'high'})
-elif total_cost_today > COST_THRESHOLD_WARN:
-    alerts.append({'type': 'info', 'icon': '💵', 'message': f'Daily cost above ${COST_THRESHOLD_WARN}: ${total_cost_today:.2f}', 'severity': 'medium'})
+if total_tokens_today > TOKEN_THRESHOLD_HIGH:
+    alerts.append({'type': 'warning', 'icon': '🔥', 'message': f'High daily tokens: {fmt(total_tokens_today)}', 'severity': 'high'})
+elif total_tokens_today > TOKEN_THRESHOLD_WARN:
+    alerts.append({'type': 'info', 'icon': '📊', 'message': f'Daily tokens above {fmt(TOKEN_THRESHOLD_WARN)}: {fmt(total_tokens_today)}', 'severity': 'medium'})
 
 for c in crons:
     if c.get('lastStatus') == 'error':
@@ -679,26 +671,21 @@ if gateway['status'] == 'offline':
 if gateway.get('rss', 0) > MEMORY_THRESHOLD_KB:
     alerts.append({'type': 'warning', 'icon': '🧠', 'message': f'High memory usage: {gateway["memory"]}', 'severity': 'medium'})
 
-# ── Cost breakdown by model (for pie chart) ──
-cost_breakdown = []
-for name, bucket in sorted(models_all.items(), key=lambda x: -x[1]['cost']):
-    if bucket['cost'] > 0:
-        cost_breakdown.append({'model': name, 'cost': round(bucket['cost'], 2)})
+# ── Token breakdown by model (for pie chart) ──
+token_breakdown = []
+for name, bucket in sorted(models_all.items(), key=lambda x: -x[1]['totalTokens']):
+    if bucket['totalTokens'] > 0:
+        token_breakdown.append({'model': name, 'tokens': bucket['totalTokens']})
 
-cost_breakdown_today = []
-for name, bucket in sorted(models_today.items(), key=lambda x: -x[1]['cost']):
-    if bucket['cost'] > 0:
-        cost_breakdown_today.append({'model': name, 'cost': round(bucket['cost'], 2)})
+token_breakdown_today = []
+for name, bucket in sorted(models_today.items(), key=lambda x: -x[1]['totalTokens']):
+    if bucket['totalTokens'] > 0:
+        token_breakdown_today.append({'model': name, 'tokens': bucket['totalTokens']})
 
-# ── Projected monthly cost ──
-day_of_month = now.day
-if day_of_month > 0:
-    # Simple projection based on days elapsed
-    days_in_month = 30
-    # Better: use today's cost * 30
-    projected_from_today = total_cost_today * 30
-else:
-    projected_from_today = 0
+# ── Average daily tokens (30-day window) ──
+days_with_tokens = sum(1 for d in chart_dates if sum(daily_tokens.get(d, {}).values()) > 0)
+total_tokens_30d = sum(sum(daily_tokens.get(d, {}).values()) for d in chart_dates)
+avg_daily_tokens = total_tokens_30d // max(days_with_tokens, 1)
 
 
 output = {
@@ -711,12 +698,12 @@ output = {
     'gateway': gateway,
     'compactionMode': compaction_mode,
 
-    # Costs
-    'totalCostToday': round(total_cost_today, 2),
-    'totalCostAllTime': round(total_cost_all, 2),
-    'projectedMonthly': round(projected_from_today, 2),
-    'costBreakdown': cost_breakdown,
-    'costBreakdownToday': cost_breakdown_today,
+    # Tokens
+    'totalTokensToday': total_tokens_today,
+    'totalTokensAllTime': total_tokens_all,
+    'avgDailyTokens': avg_daily_tokens,
+    'tokenBreakdown': token_breakdown,
+    'tokenBreakdownToday': token_breakdown_today,
 
     # Sessions
     'sessions': sessions_list,
@@ -730,10 +717,10 @@ output = {
     'subagentRunsToday': subagent_runs_today[:20],
     'subagentRuns7d': subagent_runs_7d[:50],
     'subagentRuns30d': subagent_runs_30d[:100],
-    'subagentCostAllTime': round(sum(v['cost'] for v in subagent_all.values()), 2),
-    'subagentCostToday': round(sum(v['cost'] for v in subagent_today.values()), 2),
-    'subagentCost7d': round(sum(v['cost'] for v in subagent_7d.values()), 2),
-    'subagentCost30d': round(sum(v['cost'] for v in subagent_30d.values()), 2),
+    'subagentTokensAllTime': sum(v['totalTokens'] for v in subagent_all.values()),
+    'subagentTokensToday': sum(v['totalTokens'] for v in subagent_today.values()),
+    'subagentTokens7d': sum(v['totalTokens'] for v in subagent_7d.values()),
+    'subagentTokens30d': sum(v['totalTokens'] for v in subagent_30d.values()),
 
     # Token usage
     'tokenUsage': to_list(models_all),

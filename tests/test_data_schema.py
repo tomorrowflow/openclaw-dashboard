@@ -26,7 +26,7 @@ class TestDataSchema(unittest.TestCase):
     def test_ac9_required_top_level_keys(self):
         """AC9: All required top-level keys present."""
         required = [
-            "gateway", "totalCostToday", "totalCostAllTime", "projectedMonthly",
+            "gateway", "totalTokensToday", "totalTokensAllTime", "avgDailyTokens",
             "crons", "sessions", "tokenUsage", "subagentRuns", "dailyChart",
             "skills", "gitLog", "agentConfig",
         ]
@@ -55,25 +55,22 @@ class TestDataSchema(unittest.TestCase):
             self.assertIn("model", s)
             self.assertIn("type", s)
 
-    def test_ac12_total_cost_today_is_nonneg_float(self):
-        """AC12: totalCostToday is a float >= 0."""
-        cost = self.data["totalCostToday"]
-        self.assertIsInstance(cost, (int, float))
-        self.assertGreaterEqual(cost, 0)
+    def test_ac12_total_tokens_today_is_nonneg_int(self):
+        """AC12: totalTokensToday is an int >= 0."""
+        tokens = self.data["totalTokensToday"]
+        self.assertIsInstance(tokens, int)
+        self.assertGreaterEqual(tokens, 0)
 
     def test_ac13_daily_chart_schema(self):
-        """AC13: dailyChart is a list of dicts with date and totalCost (or total)."""
+        """AC13: dailyChart is a list of dicts with date and tokens."""
         chart = self.data["dailyChart"]
         self.assertIsInstance(chart, list)
         self.assertGreater(len(chart), 0, "dailyChart should not be empty")
         for entry in chart:
             self.assertIsInstance(entry, dict)
             self.assertIn("date", entry)
-            # refresh.sh uses 'total' not 'totalCost'
-            self.assertTrue(
-                "totalCost" in entry or "total" in entry,
-                f"dailyChart entry missing cost key: {entry.get('date')}"
-            )
+            self.assertIn("tokens", entry)
+            self.assertIsInstance(entry["tokens"], int)
 
     def test_ac14_gateway_status_enum(self):
         """AC14: gateway status is one of: online, offline, unknown."""
