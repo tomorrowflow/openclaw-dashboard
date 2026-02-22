@@ -1,8 +1,9 @@
 services:
   dashboard:
     build: .
+    container_name: openclaw-dashboard
     ports:
-      - "8080:8080"
+      - "9090:8080"
     volumes:
-      - ~/.openclaw:/root/.openclaw:ro
+      - /home/openclaw/.openclaw:/root/.openclaw:ro
     restart: unless-stopped
